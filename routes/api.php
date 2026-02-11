@@ -18,7 +18,17 @@ Route::group(['prefix' => 'auth', 'middleware' => 'api'], function () {
     Route::get('user', [AuthController::class, 'me']);
 });
 
-Route::get('public/sliders', [SliderController::class, 'indexPublic']);
+// Public Routes (No Authentication Required)
+Route::prefix('public')->group(function () {
+    Route::get('/sliders', [SliderController::class, 'index']);
+    Route::get('/services', [ServiceController::class, 'index']);
+    Route::get('/projects', [ProjectController::class, 'index']);
+    Route::get('/team-members', [TeamMemberController::class, 'index']);
+    Route::get('/settings/{group}', [SettingsController::class, 'getByGroupPublic']);
+    Route::get('/stats', [SettingsController::class, 'getStats']);
+});
+
+// Admin Routes (Authentication Required)
 Route::group(['middleware' => 'auth:api', 'prefix' => 'admin'], function () {
     Route::apiResource('sliders', SliderController::class);
     Route::put('sliders/{slider}/toggle-status', [SliderController::class, 'toggleStatus']);
@@ -36,14 +46,7 @@ Route::group(['middleware' => 'auth:api', 'prefix' => 'admin'], function () {
     Route::post('/settings', [SettingsController::class, 'update']);
 });
 
-// Settings (Public)
-Route::get('/public/stats', [SettingsController::class, 'getStats']);
-Route::get('/public/sliders', [SliderController::class, 'index']);
-Route::get('/public/services', [ServiceController::class, 'index']);
-Route::get('/public/projects', [ProjectController::class, 'index']);
-Route::get('/public/settings/{group}', [SettingsController::class, 'getByGroupPublic']);
-Route::get('/public/team-members', [TeamMemberController::class, 'index']);
-
+// Public API Routes (Alternative without /public prefix for backward compatibility)
 Route::get('services', [ServiceController::class, 'index']);
 Route::get('services/{slug}', [ServiceController::class, 'showSlug']);
 Route::post('services', [ServiceController::class, 'store'])->middleware('auth:api');
