@@ -30,6 +30,18 @@ Route::prefix('public')->group(function () {
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::get('/team-members', [TeamMemberController::class, 'index']);
     Route::get('/settings/{group}', [SettingsController::class, 'getByGroupPublic']);
+
+    // Direct settings routes for frontend compatibility
+    Route::get('/settings/appearance', function() {
+        return app(SettingsController::class)->getByGroupPublic('appearance');
+    });
+    Route::get('/settings/footer', function() {
+        return app(SettingsController::class)->getByGroupPublic('footer');
+    });
+    Route::get('/settings/social', function() {
+        return app(SettingsController::class)->getByGroupPublic('social');
+    });
+
     Route::get('/stats', [SettingsController::class, 'getStats']);
 });
 
