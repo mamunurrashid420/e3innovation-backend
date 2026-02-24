@@ -20,7 +20,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'api'], function () {
 
 // Public Routes (No Authentication Required)
 Route::prefix('public')->group(function () {
-    Route::get('/sliders', [SliderController::class, 'index']);
+    Route::get('/sliders', [SliderController::class, 'indexPublic']);
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::get('/team-members', [TeamMemberController::class, 'index']);
@@ -72,3 +72,6 @@ Route::put('contact/messages/{id}/mark-read', [ContactMessageController::class, 
 
 Route::post('upload', [UploadController::class, 'store'])->middleware('auth:api');
 Route::post('media/upload', [UploadController::class, 'store'])->middleware('auth:api');
+Route::delete('media/{id}', function () {
+    return response()->json(['message' => 'Media delete not implemented'], 501);
+})->middleware('auth:api');

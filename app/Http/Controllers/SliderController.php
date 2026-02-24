@@ -37,6 +37,7 @@ class SliderController extends Controller
         } 
         // Else rely on string path in $validated['image']
 
+        $validated['order_index'] = $request->input('order_index', $request->input('order'));
         $slider = Slider::create($validated);
         return response()->json(['data' => $slider], 201);
     }
@@ -66,8 +67,13 @@ class SliderController extends Controller
             }
             $path = $request->file('image')->store('sliders', 'public');
             $validated['image'] = 'storage/' . $path;
+        } else {
+            unset($validated['image']);
         }
 
+        if ($request->has('order_index') || $request->has('order')) {
+            $validated['order_index'] = $request->input('order_index', $request->input('order'));
+        }
         $slider->update($validated);
         return response()->json(['data' => $slider]);
     }
