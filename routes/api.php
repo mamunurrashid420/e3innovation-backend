@@ -25,7 +25,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'api'], function () {
 
 // Public Routes (No Authentication Required)
 Route::prefix('public')->group(function () {
-    Route::get('/sliders', [SliderController::class, 'indexPublic']);
+    Route::get('/sliders', [SliderController::class, 'index']);
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::get('/team-members', [TeamMemberController::class, 'index']);
@@ -46,7 +46,7 @@ Route::prefix('public')->group(function () {
 });
 
 // Public API Routes (Without /public prefix for frontend compatibility)
-Route::get('sliders', [SliderController::class, 'indexPublic']);
+Route::get('sliders', [SliderController::class, 'index']);
 Route::get('appearance', function() {
     return app(SettingsController::class)->getByGroupPublic('appearance');
 });
