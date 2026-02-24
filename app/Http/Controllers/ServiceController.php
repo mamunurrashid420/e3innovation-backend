@@ -11,12 +11,32 @@ class ServiceController extends Controller
 {
     public function indexPublic()
     {
-        return response()->json(['data' => Service::where('is_active', true)->get()]);
+        $services = Service::where('is_active', true)->get()->map(function($service) {
+            $data = $service->toArray();
+            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+                $imagePath = str_starts_with($data['image'], 'storage/')
+                    ? $data['image']
+                    : 'storage/' . $data['image'];
+                $data['image'] = asset($imagePath);
+            }
+            return $data;
+        });
+        return response()->json(['data' => $services]);
     }
 
     public function index()
     {
-        return response()->json(['data' => Service::all()]);
+        $services = Service::all()->map(function($service) {
+            $data = $service->toArray();
+            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+                $imagePath = str_starts_with($data['image'], 'storage/')
+                    ? $data['image']
+                    : 'storage/' . $data['image'];
+                $data['image'] = asset($imagePath);
+            }
+            return $data;
+        });
+        return response()->json(['data' => $services]);
     }
 
     public function showSlug($slug)

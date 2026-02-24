@@ -11,12 +11,32 @@ class ProjectController extends Controller
 {
     public function indexPublic()
     {
-        return response()->json(['data' => Project::where('is_active', true)->get()]);
+        $projects = Project::where('is_active', true)->get()->map(function($project) {
+            $data = $project->toArray();
+            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+                $imagePath = str_starts_with($data['image'], 'storage/')
+                    ? $data['image']
+                    : 'storage/' . $data['image'];
+                $data['image'] = asset($imagePath);
+            }
+            return $data;
+        });
+        return response()->json(['data' => $projects]);
     }
 
     public function index()
     {
-        return response()->json(['data' => Project::all()]);
+        $projects = Project::all()->map(function($project) {
+            $data = $project->toArray();
+            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+                $imagePath = str_starts_with($data['image'], 'storage/')
+                    ? $data['image']
+                    : 'storage/' . $data['image'];
+                $data['image'] = asset($imagePath);
+            }
+            return $data;
+        });
+        return response()->json(['data' => $projects]);
     }
 
     public function showSlug($slug)

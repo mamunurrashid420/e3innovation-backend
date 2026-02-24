@@ -33,6 +33,18 @@ Route::prefix('public')->group(function () {
     Route::get('/stats', [SettingsController::class, 'getStats']);
 });
 
+// Public API Routes (Without /public prefix for frontend compatibility)
+Route::get('sliders', [SliderController::class, 'indexPublic']);
+Route::get('appearance', function() {
+    return app(SettingsController::class)->getByGroupPublic('appearance');
+});
+Route::get('footer', function() {
+    return app(SettingsController::class)->getByGroupPublic('footer');
+});
+Route::get('social', function() {
+    return app(SettingsController::class)->getByGroupPublic('social');
+});
+
 // Admin Routes (Authentication Required)
 Route::group(['middleware' => 'auth:api', 'prefix' => 'admin'], function () {
     Route::apiResource('sliders', SliderController::class);

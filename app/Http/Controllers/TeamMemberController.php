@@ -10,12 +10,32 @@ class TeamMemberController extends Controller
 {
     public function indexPublic()
     {
-        return response()->json(['data' => TeamMember::where('is_active', true)->orderBy('order_index')->get()]);
+        $team = TeamMember::where('is_active', true)->orderBy('order_index')->get()->map(function($member) {
+            $data = $member->toArray();
+            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+                $imagePath = str_starts_with($data['image'], 'storage/')
+                    ? $data['image']
+                    : 'storage/' . $data['image'];
+                $data['image'] = asset($imagePath);
+            }
+            return $data;
+        });
+        return response()->json(['data' => $team]);
     }
 
     public function index()
     {
-        return response()->json(['data' => TeamMember::orderBy('order_index')->get()]);
+        $team = TeamMember::orderBy('order_index')->get()->map(function($member) {
+            $data = $member->toArray();
+            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+                $imagePath = str_starts_with($data['image'], 'storage/')
+                    ? $data['image']
+                    : 'storage/' . $data['image'];
+                $data['image'] = asset($imagePath);
+            }
+            return $data;
+        });
+        return response()->json(['data' => $team]);
     }
 
     public function store(Request $request)

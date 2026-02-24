@@ -17,7 +17,11 @@ class SliderController extends Controller
         return $query->get()->map(function ($slider) {
             $item = $slider->toArray();
             if (!empty($item['image']) && !str_starts_with($item['image'], 'http')) {
-                $item['image'] = URL::asset($item['image']);
+                // If image path doesn't start with 'storage/', add it
+                $imagePath = str_starts_with($item['image'], 'storage/')
+                    ? $item['image']
+                    : 'storage/' . $item['image'];
+                $item['image'] = asset($imagePath);
             }
             return $item;
         });
@@ -65,7 +69,10 @@ class SliderController extends Controller
     {
         $data = $slider->toArray();
         if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-            $data['image'] = URL::asset($data['image']);
+            $imagePath = str_starts_with($data['image'], 'storage/')
+                ? $data['image']
+                : 'storage/' . $data['image'];
+            $data['image'] = asset($imagePath);
         }
         return response()->json(['data' => $data]);
     }
