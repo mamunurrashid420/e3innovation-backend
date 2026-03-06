@@ -14,10 +14,14 @@ class SliderController extends Controller
      */
     private function fullImageUrl(string $path): string
     {
-        if (str_starts_with($path, 'http')) {
-            return $path;
+        $path = str_replace('\\', '/', trim($path));
+        if ($path === '' || str_starts_with($path, 'http')) {
+            return $path === '' ? '' : $path;
         }
-        $relative = str_replace('storage/', '', ltrim($path, '/'));
+        $relative = preg_replace('#^storage/#i', '', ltrim($path, '/'));
+        if ($relative === '') {
+            return '';
+        }
         $url = Storage::disk('public')->url($relative);
         if (!str_starts_with($url, 'http')) {
             $base = rtrim(config('app.url', request()->getSchemeAndHttpHost()), '/');
@@ -75,7 +79,11 @@ class SliderController extends Controller
 
         $validated['order_index'] = $request->input('order_index', $request->input('order'));
         $slider = Slider::create($validated);
-        return response()->json(['data' => $slider], 201);
+        $data = $slider->toArray();
+        if (!empty($data['image'])) {
+            $data['image'] = $this->fullImageUrl($data['image']);
+        }
+        return response()->json(['data' => $data], 201);
     }
 
     public function show(Slider $slider)
@@ -115,7 +123,11 @@ class SliderController extends Controller
             $validated['order_index'] = $request->input('order_index', $request->input('order'));
         }
         $slider->update($validated);
-        return response()->json(['data' => $slider]);
+        $data = $slider->fresh()->toArray();
+        if (!empty($data['image'])) {
+            $data['image'] = $this->fullImageUrl($data['image']);
+        }
+        return response()->json(['data' => $data]);
     }
 
     public function destroy(Slider $slider)
