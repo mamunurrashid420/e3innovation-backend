@@ -9,18 +9,29 @@ use Illuminate\Support\Facades\Storage;
 class SliderController extends Controller
 {
     /**
+     * Base URL for storage images. Prefer APP_URL so production always uses https://api.e3bd.com.
+     */
+    private function getStorageBaseUrl(): string
+    {
+        $appUrl = config('app.url');
+        if (!empty($appUrl) && str_starts_with($appUrl, 'http')) {
+            return rtrim($appUrl, '/');
+        }
+        return rtrim(request()->getSchemeAndHttpHost(), '/');
+    }
+
+    /**
      * Return sliders with full image URL so frontend can show images.
-     * Uses request host (not APP_URL) so images work from any domain/port.
      */
     private function slidersWithImageUrl($query)
     {
-        $baseUrl = rtrim(request()->getSchemeAndHttpHost(), '/');
+        $baseUrl = $this->getStorageBaseUrl();
         return $query->get()->map(function ($slider) use ($baseUrl) {
             $item = $slider->toArray();
             if (!empty($item['image']) && !str_starts_with($item['image'], 'http')) {
                 $imagePath = str_starts_with($item['image'], 'storage/')
                     ? $item['image']
-                    : 'storage/' . $item['image'];
+                    : 'storage/' . ltrim($item['image'], '/');
                 $item['image'] = $baseUrl . '/' . ltrim($imagePath, '/');
             }
             return $item;
@@ -71,8 +82,8 @@ class SliderController extends Controller
         if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
             $imagePath = str_starts_with($data['image'], 'storage/')
                 ? $data['image']
-                : 'storage/' . $data['image'];
-            $data['image'] = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($imagePath, '/');
+                : 'storage/' . ltrim($data['image'], '/');
+            $data['image'] = $this->getStorageBaseUrl() . '/' . ltrim($imagePath, '/');
         }
         return response()->json(['data' => $data]);
     }
