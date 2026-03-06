@@ -2,11 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-
-// Test route: GET /api/ping → 200 (verify API is reachable)
-Route::get('/ping', function () {
-    return response()->json(['ok' => true, 'message' => 'API is reachable']);
-});
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ServiceController;
@@ -14,6 +9,16 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\UploadController;
+
+// Test route: GET /api/ping → 200 (verify API is reachable)
+Route::get('/ping', function () {
+    return response()->json(['ok' => true, 'message' => 'API is reachable']);
+});
+
+// Alternate public routes (no /public prefix) – fixes 404 when /api/public/* fails on server
+Route::get('/sliders/active', [SliderController::class, 'indexPublic']);
+Route::get('/settings/public/{group}', [SettingsController::class, 'getByGroupPublic']);
+Route::get('/stats/public', [SettingsController::class, 'getStats']);
 
 Route::group(['prefix' => 'auth', 'middleware' => 'api'], function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -25,7 +30,7 @@ Route::group(['prefix' => 'auth', 'middleware' => 'api'], function () {
 
 // Public Routes (No Authentication Required)
 Route::prefix('public')->group(function () {
-    Route::get('/sliders', [SliderController::class, 'index']);
+    Route::get('/sliders', [SliderController::class, 'indexPublic']);
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::get('/team-members', [TeamMemberController::class, 'index']);

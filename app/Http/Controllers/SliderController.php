@@ -5,23 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Slider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 
 class SliderController extends Controller
 {
     /**
      * Return sliders with full image URL so frontend can show images.
+     * Uses request host (not APP_URL) so images work from any domain/port.
      */
     private function slidersWithImageUrl($query)
     {
-        return $query->get()->map(function ($slider) {
+        $baseUrl = rtrim(request()->getSchemeAndHttpHost(), '/');
+        return $query->get()->map(function ($slider) use ($baseUrl) {
             $item = $slider->toArray();
             if (!empty($item['image']) && !str_starts_with($item['image'], 'http')) {
-                // If image path doesn't start with 'storage/', add it
                 $imagePath = str_starts_with($item['image'], 'storage/')
                     ? $item['image']
                     : 'storage/' . $item['image'];
-                $item['image'] = asset($imagePath);
+                $item['image'] = $baseUrl . '/' . ltrim($imagePath, '/');
             }
             return $item;
         });
@@ -72,7 +72,7 @@ class SliderController extends Controller
             $imagePath = str_starts_with($data['image'], 'storage/')
                 ? $data['image']
                 : 'storage/' . $data['image'];
-            $data['image'] = asset($imagePath);
+            $data['image'] = rtrim(request()->getSchemeAndHttpHost(), '/') . '/' . ltrim($imagePath, '/');
         }
         return response()->json(['data' => $data]);
     }

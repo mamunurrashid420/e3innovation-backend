@@ -9,39 +9,35 @@ use Illuminate\Support\Facades\Storage;
 
 class ServiceController extends Controller
 {
+    /** Build full image/icon URL using request host (works with https://api.e3bd.com). */
+    private function withFullUrls(array $data): array
+    {
+        $baseUrl = rtrim(request()->getSchemeAndHttpHost(), '/');
+        foreach (['image', 'icon'] as $key) {
+            if (!empty($data[$key]) && !str_starts_with($data[$key], 'http')) {
+                $path = str_starts_with($data[$key], 'storage/') ? $data[$key] : 'storage/' . $data[$key];
+                $data[$key] = $baseUrl . '/' . ltrim($path, '/');
+            }
+        }
+        return $data;
+    }
+
     public function indexPublic()
     {
-        $services = Service::where('is_active', true)->get()->map(function($service) {
-            $data = $service->toArray();
-            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-                $imagePath = str_starts_with($data['image'], 'storage/')
-                    ? $data['image']
-                    : 'storage/' . $data['image'];
-                $data['image'] = asset($imagePath);
-            }
-            return $data;
-        });
+        $services = Service::where('is_active', true)->get()->map(fn($service) => $this->withFullUrls($service->toArray()));
         return response()->json(['data' => $services]);
     }
 
     public function index()
     {
-        $services = Service::all()->map(function($service) {
-            $data = $service->toArray();
-            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-                $imagePath = str_starts_with($data['image'], 'storage/')
-                    ? $data['image']
-                    : 'storage/' . $data['image'];
-                $data['image'] = asset($imagePath);
-            }
-            return $data;
-        });
+        $services = Service::all()->map(fn($service) => $this->withFullUrls($service->toArray()));
         return response()->json(['data' => $services]);
     }
 
     public function showSlug($slug)
     {
-        return response()->json(['data' => Service::where('slug', $slug)->where('is_active', true)->firstOrFail()]);
+        $service = Service::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        return response()->json(['data' => $this->withFullUrls($service->toArray())]);
     }
 
     public function store(Request $request)
@@ -71,7 +67,7 @@ class ServiceController extends Controller
 
     public function show(Service $service)
     {
-        return response()->json(['data' => $service]);
+        return response()->json(['data' => $this->withFullUrls($service->toArray())]);
     }
 
     public function update(Request $request, Service $service)

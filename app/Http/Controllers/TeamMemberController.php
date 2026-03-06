@@ -8,33 +8,26 @@ use Illuminate\Support\Facades\Storage;
 
 class TeamMemberController extends Controller
 {
+    /** Build full image URL using request host (works with https://api.e3bd.com). */
+    private function withFullUrls(array $data): array
+    {
+        $baseUrl = rtrim(request()->getSchemeAndHttpHost(), '/');
+        if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+            $path = str_starts_with($data['image'], 'storage/') ? $data['image'] : 'storage/' . $data['image'];
+            $data['image'] = $baseUrl . '/' . ltrim($path, '/');
+        }
+        return $data;
+    }
+
     public function indexPublic()
     {
-        $team = TeamMember::where('is_active', true)->orderBy('order_index')->get()->map(function($member) {
-            $data = $member->toArray();
-            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-                $imagePath = str_starts_with($data['image'], 'storage/')
-                    ? $data['image']
-                    : 'storage/' . $data['image'];
-                $data['image'] = asset($imagePath);
-            }
-            return $data;
-        });
+        $team = TeamMember::where('is_active', true)->orderBy('order_index')->get()->map(fn($member) => $this->withFullUrls($member->toArray()));
         return response()->json(['data' => $team]);
     }
 
     public function index()
     {
-        $team = TeamMember::orderBy('order_index')->get()->map(function($member) {
-            $data = $member->toArray();
-            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-                $imagePath = str_starts_with($data['image'], 'storage/')
-                    ? $data['image']
-                    : 'storage/' . $data['image'];
-                $data['image'] = asset($imagePath);
-            }
-            return $data;
-        });
+        $team = TeamMember::orderBy('order_index')->get()->map(fn($member) => $this->withFullUrls($member->toArray()));
         return response()->json(['data' => $team]);
     }
 
@@ -65,7 +58,7 @@ class TeamMemberController extends Controller
 
     public function show(TeamMember $team)
     {
-        return response()->json(['data' => $team]);
+        return response()->json(['data' => $this->withFullUrls($team->toArray())]);
     }
 
     public function update(Request $request, TeamMember $team)

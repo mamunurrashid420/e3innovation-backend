@@ -9,39 +9,42 @@ use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
+    /** Build full image URL using request host (works with https://api.e3bd.com). */
+    private function withFullUrls(array $data): array
+    {
+        $baseUrl = rtrim(request()->getSchemeAndHttpHost(), '/');
+        if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
+            $path = str_starts_with($data['image'], 'storage/') ? $data['image'] : 'storage/' . $data['image'];
+            $data['image'] = $baseUrl . '/' . ltrim($path, '/');
+        }
+        if (!empty($data['images']) && is_array($data['images'])) {
+            $data['images'] = array_map(function ($img) use ($baseUrl) {
+                if (is_string($img) && !str_starts_with($img, 'http')) {
+                    $path = str_starts_with($img, 'storage/') ? $img : 'storage/' . $img;
+                    return $baseUrl . '/' . ltrim($path, '/');
+                }
+                return $img;
+            }, $data['images']);
+        }
+        return $data;
+    }
+
     public function indexPublic()
     {
-        $projects = Project::where('is_active', true)->get()->map(function($project) {
-            $data = $project->toArray();
-            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-                $imagePath = str_starts_with($data['image'], 'storage/')
-                    ? $data['image']
-                    : 'storage/' . $data['image'];
-                $data['image'] = asset($imagePath);
-            }
-            return $data;
-        });
+        $projects = Project::where('is_active', true)->get()->map(fn($project) => $this->withFullUrls($project->toArray()));
         return response()->json(['data' => $projects]);
     }
 
     public function index()
     {
-        $projects = Project::all()->map(function($project) {
-            $data = $project->toArray();
-            if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-                $imagePath = str_starts_with($data['image'], 'storage/')
-                    ? $data['image']
-                    : 'storage/' . $data['image'];
-                $data['image'] = asset($imagePath);
-            }
-            return $data;
-        });
+        $projects = Project::all()->map(fn($project) => $this->withFullUrls($project->toArray()));
         return response()->json(['data' => $projects]);
     }
 
     public function showSlug($slug)
     {
-        return response()->json(['data' => Project::where('slug', $slug)->where('is_active', true)->firstOrFail()]);
+        $project = Project::where('slug', $slug)->where('is_active', true)->firstOrFail();
+        return response()->json(['data' => $this->withFullUrls($project->toArray())]);
     }
 
     public function store(Request $request)
@@ -78,7 +81,7 @@ class ProjectController extends Controller
 
     public function show(Project $project)
     {
-        return response()->json(['data' => $project]);
+        return response()->json(['data' => $this->withFullUrls($project->toArray())]);
     }
 
     public function update(Request $request, Project $project)
