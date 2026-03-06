@@ -9,15 +9,21 @@ use Illuminate\Support\Facades\Storage;
 class SliderController extends Controller
 {
     /**
-     * Base URL for storage images. Prefer APP_URL so production always uses https://api.e3bd.com.
+     * Build full public URL for a storage image path (e.g. "storage/sliders/abc.jpg").
+     * Uses Laravel Storage::url() so APP_URL from .env is used (https://api.e3bd.com).
      */
-    private function getStorageBaseUrl(): string
+    private function fullImageUrl(string $path): string
     {
-        $appUrl = config('app.url');
-        if (!empty($appUrl) && str_starts_with($appUrl, 'http')) {
-            return rtrim($appUrl, '/');
+        if (str_starts_with($path, 'http')) {
+            return $path;
         }
-        return rtrim(request()->getSchemeAndHttpHost(), '/');
+        $relative = str_replace('storage/', '', ltrim($path, '/'));
+        $url = Storage::disk('public')->url($relative);
+        if (!str_starts_with($url, 'http')) {
+            $base = rtrim(config('app.url', request()->getSchemeAndHttpHost()), '/');
+            $url = $base . '/' . ltrim($url, '/');
+        }
+        return $url;
     }
 
     /**
@@ -25,14 +31,10 @@ class SliderController extends Controller
      */
     private function slidersWithImageUrl($query)
     {
-        $baseUrl = $this->getStorageBaseUrl();
-        return $query->get()->map(function ($slider) use ($baseUrl) {
+        return $query->get()->map(function ($slider) {
             $item = $slider->toArray();
-            if (!empty($item['image']) && !str_starts_with($item['image'], 'http')) {
-                $imagePath = str_starts_with($item['image'], 'storage/')
-                    ? $item['image']
-                    : 'storage/' . ltrim($item['image'], '/');
-                $item['image'] = $baseUrl . '/' . ltrim($imagePath, '/');
+            if (!empty($item['image'])) {
+                $item['image'] = $this->fullImageUrl($item['image']);
             }
             return $item;
         });
@@ -79,11 +81,8 @@ class SliderController extends Controller
     public function show(Slider $slider)
     {
         $data = $slider->toArray();
-        if (!empty($data['image']) && !str_starts_with($data['image'], 'http')) {
-            $imagePath = str_starts_with($data['image'], 'storage/')
-                ? $data['image']
-                : 'storage/' . ltrim($data['image'], '/');
-            $data['image'] = $this->getStorageBaseUrl() . '/' . ltrim($imagePath, '/');
+        if (!empty($data['image'])) {
+            $data['image'] = $this->fullImageUrl($data['image']);
         }
         return response()->json(['data' => $data]);
     }
